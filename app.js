@@ -13,20 +13,30 @@ function lexer(input) {
   const tokens = [];
 
   [...input].forEach((element) => {
-    tokenTypes.forEach((e) => {
-      if (element === e.symbol) {
-        tokens.push(e.type);
-      }
+    if (/\s/.test(element)) {
+      return;
+    }
+
+    const token = tokenTypes.find((e) => {
+      return element === e.symbol;
     });
+
+    if (token) {
+      tokens.push(token.type);
+    } else {
+      tokens.push("INVALID");
+    }
   });
+
   return tokens;
 }
 
 function parser(args) {
-  const firstElement = args[0];
-  const lastElement = args[args.length - 1];
-
-  if (firstElement === "LEFT_BRACE" && lastElement === "RIGHT_BRACE") {
+  if (
+    args.length === 2 &&
+    args[0] === "LEFT_BRACE" &&
+    args[1] === "RIGHT_BRACE"
+  ) {
     console.log("Valid JSON.");
     process.exit(0);
   } else {
@@ -35,7 +45,6 @@ function parser(args) {
   }
 }
 
-console.log(argv);
 let data = "";
 
 process.stdin.on("data", (chunk) => {
