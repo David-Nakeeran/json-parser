@@ -10,7 +10,7 @@ const tokenTypes = [
   { type: "RIGHT_BRACE", symbol: "}" },
 ];
 
-const expectedTypes = ["LEFT_BRACE", "KEY", "COLON", "VALUE", "RIGHT_BRACE"];
+const expectedObject = ["LEFT_BRACE", "KEY", "COLON", "VALUE", "RIGHT_BRACE"];
 
 function lexer(input) {
   const tokens = [];
@@ -62,19 +62,31 @@ function lexer(input) {
 }
 
 function parser(args) {
-  args.forEach((element, index) => {
-    if (args.includes("INVALID")) {
-      console.log("Invalid JSON.");
-      process.exit(1);
+  if (
+    args[0].type === "LEFT_BRACE" &&
+    args[args.length - 1].type === "RIGHT_BRACE"
+  ) {
+    if (args.length === 2) {
+      console.log("Valid JSON.");
+      process.exit(0);
     }
+    args.forEach((element, index) => {
+      if (args.includes("INVALID")) {
+        console.log("Invalid JSON.");
+        process.exit(1);
+      }
 
-    if (expectedTypes[index] !== element.type) {
-      console.log("Invalid JSON.");
-      process.exit(1);
-    }
-  });
-  console.log("Valid JSON.");
-  process.exit(0);
+      if (expectedObject[index] !== element.type) {
+        console.log("Invalid JSON.");
+        process.exit(1);
+      }
+    });
+    console.log("Valid JSON.");
+    process.exit(0);
+  } else {
+    console.log("Invalid JSON.");
+    process.exit(1);
+  }
 }
 
 let data = "";
