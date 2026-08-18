@@ -10,7 +10,7 @@ const tokenTypes = [
   { type: "RIGHT_BRACE", symbol: "}" },
 ];
 
-const expectedObject = ["LEFT_BRACE", "KEY", "COLON", "VALUE", "RIGHT_BRACE"];
+const expectedObject = ["KEY", "COLON", "VALUE"];
 
 function lexer(input) {
   const tokens = [];
@@ -34,6 +34,11 @@ function lexer(input) {
     if (element === ":") {
       const colonObject = { type: "COLON", value: ":" };
       tokens.push(colonObject);
+    }
+
+    if (element === ",") {
+      const commaObject = { type: "COMMA", value: "," };
+      tokens.push(commaObject);
     }
 
     if (element === '"') {
@@ -70,17 +75,32 @@ function parser(args) {
       console.log("Valid JSON.");
       process.exit(0);
     }
-    args.forEach((element, index) => {
-      if (args.includes("INVALID")) {
+
+    if (args.includes("INVALID")) {
+      console.log("Invalid JSON.");
+      process.exit(1);
+    }
+
+    let counter = 0;
+    for (let index = 1; index < args.length - 1; index++) {
+      const element = args[index];
+      if (
+        element.type === "COMMA" &&
+        args[index - 1].type === "VALUE" &&
+        args[index + 1].type === "KEY"
+      ) {
+        counter = 0;
+        continue;
+      }
+
+      if (expectedObject[counter] !== element.type) {
         console.log("Invalid JSON.");
         process.exit(1);
       }
 
-      if (expectedObject[index] !== element.type) {
-        console.log("Invalid JSON.");
-        process.exit(1);
-      }
-    });
+      counter++;
+    }
+
     console.log("Valid JSON.");
     process.exit(0);
   } else {
