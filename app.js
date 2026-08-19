@@ -1,22 +1,20 @@
 #!/usr/bin/env node
 "use strict";
 
+import { type } from "node:os";
 import { argv } from "node:process";
 import process from "node:process";
 
-const tokenTypes = [
-  { type: "LEFT_BRACE", symbol: "{" },
-  { type: "COLON", symbol: ":" },
-  { type: "RIGHT_BRACE", symbol: "}" },
-];
+const valueTypes = ["STRING", "NUMBER", "BOOLEAN", "NULL"];
 
-const expectedObject = ["KEY", "COLON", "VALUE"];
+const expectedObject = ["STRING", "COLON", "VALUE"];
 
 function lexer(input) {
   const tokens = [];
   let isInsideString = false;
   let stringCollection = "";
-  let isTypeKey = true;
+  let numberCollection = "";
+  let dataValue = "";
 
   [...input].forEach((element, index) => {
     if (/\s/.test(element)) {
@@ -45,17 +43,75 @@ function lexer(input) {
       isInsideString = !isInsideString;
       if (!isInsideString && stringCollection != "") {
         const obj = {
-          type: `${isTypeKey ? "KEY" : "VALUE"}`,
+          type: "STRING",
           value: `${stringCollection}`,
         };
         tokens.push(obj);
         stringCollection = "";
-        isTypeKey = !isTypeKey;
       }
+    }
+
+    if (/^\d+$/.test(element) && !isInsideString) {
+      numberCollection += element;
+    }
+
+    if (
+      /^\d+$/.test(element) &&
+      !/^\d+$/.test(input[index + 1]) &&
+      !isInsideString
+    ) {
+      const obj = {
+        type: "NUMBER",
+        value: `${numberCollection}`,
+      };
+      tokens.push(obj);
+      numberCollection = "";
     }
 
     if (isInsideString && element != '"') {
       stringCollection += element;
+    }
+
+    if (
+      element.match(/[a-z]/i) &&
+      element != '"' &&
+      !isInsideString &&
+      !/^\d+$/.test(element)
+    ) {
+      dataValue += element;
+    }
+    console.log(dataValue);
+
+    if (dataValue && !/[a-z]/i.test(input[index + 1])) {
+      switch (dataValue) {
+        case "true":
+          const trueObj = {
+            type: "BOOLEAN",
+            value: true,
+          };
+          tokens.push(trueObj);
+          dataValue = "";
+          break;
+        case "false":
+          let falseObj = {
+            type: "BOOLEAN",
+            value: false,
+          };
+          tokens.push(falseObj);
+          dataValue = "";
+          break;
+        case "null":
+          let nullObj = {
+            type: "NULL",
+            value: null,
+          };
+          tokens.push(nullObj);
+          dataValue = "";
+          break;
+        default:
+          tokens.push("INVALID");
+          dataValue = "";
+      }
     }
   });
 
@@ -86,14 +142,24 @@ function parser(args) {
       const element = args[index];
       if (
         element.type === "COMMA" &&
-        args[index - 1].type === "VALUE" &&
-        args[index + 1].type === "KEY"
+        valueTypes.includes(args[index - 1].type) &&
+        args[index + 1].type === "STRING"
       ) {
         counter = 0;
         continue;
       }
 
-      if (expectedObject[counter] !== element.type) {
+      if (counter === 0 || counter === 1) {
+        if (expectedObject[counter] !== element.type) {
+          console.log("Invalid JSON.");
+          process.exit(1);
+        }
+      } else if (counter === 2) {
+        if (!valueTypes.includes(element.type)) {
+          console.log("Invalid JSON.");
+          process.exit(1);
+        }
+      } else if (counter > 2) {
         console.log("Invalid JSON.");
         process.exit(1);
       }
