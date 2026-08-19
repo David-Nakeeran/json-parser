@@ -47,3 +47,15 @@ test("Step 2 - invalid JSON exits with code 1", () => {
 
   assert.strictEqual(result.status, 1);
 });
+
+test("Step 3 - valid JSON exits with code 0", () => {
+  const result = runParser("step3/valid.json");
+
+  assert.strictEqual(result.status, 0);
+});
+
+test("Step 3 - invalid JSON exits with code 1", () => {
+  const result = runParser("step3/invalid.json");
+
+  assert.strictEqual(result.status, 1);
+});
