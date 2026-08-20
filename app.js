@@ -9,6 +9,42 @@ const valueTypes = ["STRING", "NUMBER", "BOOLEAN", "NULL"];
 
 const expectedObject = ["STRING", "COLON", "VALUE"];
 
+function parseValue(tokens, position) {
+  let token = tokens[position];
+
+  if (valueTypes.includes(token.type)) {
+    return position + 1;
+  }
+
+  if (!valueTypes.includes(token.type) && token.type === "LEFT_BRACE") {
+    console.log(token);
+    return parseObject(tokens, position);
+  }
+}
+
+function parseObject(tokens, position) {
+  let token = tokens[position];
+
+  if (
+    token.type === "LEFT_BRACE" &&
+    tokens[position + 1].type === "RIGHT_BRACE"
+  ) {
+    return position + 2;
+  }
+
+  if (
+    token.type === "LEFT_BRACE" &&
+    tokens[position + 1].type === "STRING" &&
+    tokens[position + 2].type === "COLON"
+  ) {
+    const positionAfterValue = parseValue(tokens, position + 3);
+    console.log(positionAfterValue);
+    if (tokens[positionAfterValue].type === "RIGHT_BRACE") {
+      return positionAfterValue + 1;
+    }
+  }
+}
+
 function lexer(input) {
   const tokens = [];
   let isInsideString = false;
@@ -27,6 +63,14 @@ function lexer(input) {
     } else if (element === "}") {
       const rightBraceObject = { type: "RIGHT_BRACE", value: "}" };
       tokens.push(rightBraceObject);
+    }
+
+    if (element === "[") {
+      const leftBracketObject = { type: "LEFT_BRACKET", value: "[" };
+      tokens.push(leftBracketObject);
+    } else if (element === "]") {
+      const rightBracketObject = { type: "RIGHT_BRACKET", value: "]" };
+      tokens.push(rightBracketObject);
     }
 
     if (element === ":") {
@@ -80,7 +124,7 @@ function lexer(input) {
     ) {
       dataValue += element;
     }
-    console.log(dataValue);
+    // console.log(dataValue);
 
     if (dataValue && !/[a-z]/i.test(input[index + 1])) {
       switch (dataValue) {
@@ -118,7 +162,7 @@ function lexer(input) {
   if (tokens.length === 0) {
     tokens.push("INVALID");
   }
-  console.log(tokens);
+  // console.log(tokens);
   return tokens;
 }
 
@@ -127,7 +171,9 @@ function parser(args) {
     args[0].type === "LEFT_BRACE" &&
     args[args.length - 1].type === "RIGHT_BRACE"
   ) {
-    if (args.length === 2) {
+    const parsedLength = parseObject(args, 0);
+    console.log(parsedLength);
+    if (parsedLength === args.length) {
       console.log("Valid JSON.");
       process.exit(0);
     }
